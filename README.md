@@ -27,7 +27,34 @@ $ pip install mosaicai
 
 ## 使用方法
 
-基本的な使用例を以下に示します：
+1. まず、プロジェクトのルートディレクトリに`.env`ファイルを作成し、以下のように設定してください：
+
+```
+# OpenAI (ChatGPT) API Key
+OPENAI_API_KEY=YOUR-OPENAI_API_KEY
+
+# Anthropic (Claude) API Key
+ANTHROPIC_API_KEY=YOUR-ANTHROPIC_API_KEY
+
+# Google (Gemini) API Key
+GOOGLE_API_KEY=YOUR-GOOGLE_API_KEY
+
+# Perplexity API Key
+PERPLEXITY_API_KEY=YOUR-PERPLEXITY_API_KEY
+
+# Default model (optional)
+DEFAULT_MODEL=gemini
+
+# Logging configuration (optional)
+LOG_LEVEL=INFO
+LOG_FILE=mosaicai.log
+
+# Request configuration (optional)
+REQUEST_TIMEOUT=30
+MAX_RETRIES=3
+```
+
+2. 基本的な使用例を以下に示します：
 
 ```python
 from mosaicai import MosaicAI
