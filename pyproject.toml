@@ -38,4 +38,4 @@ dev = ["pytest==8.3.2"]
 Homepage = "https://github.com/syukan3/MosaicAI"
 
 [tool.setuptools]
-packages = ["mosaicai"]
+packages = ["mosaicai", "mosaicai.models"]
