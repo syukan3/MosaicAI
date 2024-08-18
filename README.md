@@ -72,13 +72,33 @@ response = client.generate_with_image("この画像について説明してく�
 print(response)
 
 # JSON生成
-schema = {
-    "title": "str",
-    "main_points": "List[str]",
-    "value": "int"
-}
-json_response = client.generate_json("AIの倫理的課題について3つのポイントを挙げてください", schema)
-print(json_response)
+from pydantic import BaseModel
+from typing import List
+class AIEthicsResponse(BaseModel):
+    title: str
+    points: List[str]
+    summary: str
+    integer_value: int
+    float_value: float
+    boolean_flag: bool
+    nested_object: Dict[str, Any]
+    array_of_numbers: List[float]
+
+response = client.generate_json("AIの倫理的課題について3つのポイントを挙げてください", AIEthicsResponse)
+print(response)
+
+# 画像付きJSON生成
+class AIProductFeatures(BaseModel):
+    product_name: str
+    features: List[str]
+    overall_impression: str
+    price: float
+    is_available: bool
+    release_date: str
+    specifications: Dict[str, Union[str, int, float, bool]]
+    ratings: List[int]
+
+image_json_response = client.generate_with_image_json("path/to/image.jpg", "この画像に基づいて、製品の特徴を3つ挙げてください", AIProductFeatures)
 ```
 
 より詳細な使用例については、[examples](examples)ディレクトリを参照してください。

@@ -1,9 +1,10 @@
 import google.generativeai as genai
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Type
 from PIL import Image
 import json
 from .base import AIModelBase
 from ..utils.api_key_manager import APIKeyManager
+from pydantic import BaseModel
 
 
 class Gemini(AIModelBase):
@@ -54,7 +55,7 @@ class Gemini(AIModelBase):
         # 生成された応答テキストを返す
         return response.text
 
-    def generate_json(self, message: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
+    def generate_json(self, message: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         指定されたメッセージに対してGeminiのJSON応答を生成する
         :param message: ユーザーからの入力メッセージ
@@ -72,7 +73,7 @@ class Gemini(AIModelBase):
         json_response = self._parse_json_response(response.text)
         return self._convert_types(json_response, output_schema)
 
-    def generate_with_image_json(self, message: str, image_path: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
+    def generate_with_image_json(self, message: str, image_path: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         画像を含むメッセージに対してGeminiのJSON応答を生成する
         :param message: ユーザーからの入力メッセージ

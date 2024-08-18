@@ -3,6 +3,15 @@ from unittest.mock import Mock, patch, mock_open
 from mosaicai.models.claude import Claude
 from mosaicai.utils.api_key_manager import APIKeyManager
 from anthropic import Anthropic
+from pydantic import BaseModel
+
+
+class OutputSchema(BaseModel):
+    key_str: str
+    key_int: int
+    key_float: float
+    key_bool: bool
+    key_list: list
 
 
 @pytest.fixture
@@ -75,12 +84,14 @@ def test_generate_with_image(mock_guess_type, mock_b64encode, mock_file, claude_
 def test_generate_json(claude_instance):
     """generate_jsonメソッドのテスト"""
     mock_response = Mock()
-    mock_response.content = [Mock(text='{"key": "value"}')]
+    mock_response.content = [Mock(
+        text='{"key_str": "value", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}')]
     claude_instance.client.messages.create = Mock(return_value=mock_response)
 
-    output_schema = {"key": "str"}
+    output_schema = OutputSchema
     result = claude_instance.generate_json("Test JSON message", output_schema)
-    assert result == {"key": "value"}
+    assert result == {"key_str": "value", "key_int": 123,
+                      "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
     claude_instance.client.messages.create.assert_called_once()
 
 
@@ -92,12 +103,14 @@ def test_generate_with_image_json(mock_guess_type, mock_b64encode, mock_file, cl
     mock_guess_type.return_value = ("image/jpeg", None)
     mock_b64encode.return_value = b"encoded_image"
     mock_response = Mock()
-    mock_response.content = [Mock(text='{"key": "value with image"}')]
+    mock_response.content = [Mock(
+        text='{"key_str": "value with image", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}')]
     claude_instance.client.messages.create = Mock(return_value=mock_response)
 
-    output_schema = {"key": "str"}
+    output_schema = OutputSchema
     result = claude_instance.generate_with_image_json(
         "Test JSON message with image", "./tests/test_image.jpg", output_schema)
-    assert result == {"key": "value with image"}
+    assert result == {"key_str": "value with image", "key_int": 123,
+                      "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
     claude_instance.client.messages.create.assert_called_once()
     mock_file.assert_called_once_with("./tests/test_image.jpg", "rb")

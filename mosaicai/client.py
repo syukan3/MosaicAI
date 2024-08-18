@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union, Type
+from pydantic import BaseModel
 import json
 from .models import ChatGPT, Claude, Gemini, Perplexity, AIModelBase
 from .utils.api_key_manager import APIKeyManager
@@ -69,38 +70,6 @@ class MosaicAI:
             raise ModelNotSupportedError(f"Model '{model}' is not supported.")
         return self.models[model].generate(prompt)
 
-    def generate_image_description(self, image_path: str, prompt: str) -> str:
-        """
-        指定されたモデルを使用して画像の説明を生成します。
-
-        :param image_path: 画像ファイルのパス
-        :param prompt: 生成のためのプロンプト
-        :return: 生成された画像の説明
-        :raises ModelNotSupportedError: 指定されたモデルがサポートされていない場合
-        """
-        if not prompt or not prompt.strip():
-            raise ValueError("プロンプトが空です。有効なプロンプトを入力してください。")
-        model = self.get_model()
-        if model not in self.models:
-            raise ModelNotSupportedError(f"Model '{model}' is not supported.")
-        return self.models[model].generate_with_image(image_path, prompt)
-
-    def generate_json(self, prompt: str, schema: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        指定されたモデルを使用してJSONを生成します。
-
-        :param prompt: 生成のためのプロンプト
-        :param schema: 生成するJSONのスキーマ
-        :return: 生成されたJSON
-        :raises ModelNotSupportedError: 指定されたモデルがサポートされていない場合
-        """
-        if not prompt or not prompt.strip():
-            raise ValueError("プロンプトが空です。有効なプロンプトを入力してください。")
-        model = self.get_model()
-        if model not in self.models:
-            raise ModelNotSupportedError(f"Model '{model}' is not supported.")
-        return self.models[model].generate_json(prompt, schema)
-
     def generate_with_image(self, prompt: str, image_path: str) -> str:
         """
         指定されたモデルを使用して画像付きのテキストを生成します。
@@ -121,7 +90,23 @@ class MosaicAI:
 
         return self.models[model].generate_with_image(prompt, image_path)
 
-    def generate_with_image_json(self, prompt: str, image_path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_json(self, prompt: str, schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
+        """
+        指定されたモデルを使用してJSONを生成します。
+
+        :param prompt: 生成のためのプロンプト
+        :param schema: 生成するJSONのスキーマ
+        :return: 生成されたJSON
+        :raises ModelNotSupportedError: 指定されたモデルがサポートされていない場合
+        """
+        if not prompt or not prompt.strip():
+            raise ValueError("プロンプトが空です。有効なプロンプトを入力してください。")
+        model = self.get_model()
+        if model not in self.models:
+            raise ModelNotSupportedError(f"Model '{model}' is not supported.")
+        return self.models[model].generate_json(prompt, schema)
+
+    def generate_with_image_json(self, prompt: str, image_path: str, schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         指定されたモデルを使用して画像付きのJSONを生成します。
 
