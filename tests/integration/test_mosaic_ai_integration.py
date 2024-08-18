@@ -1,4 +1,5 @@
 import pytest
+from pydantic import BaseModel, Field
 from mosaicai import MosaicAI
 
 
@@ -39,18 +40,26 @@ def test_json_generation(model):
     指定されたスキーマに従ってJSONが正しく生成されることを確認します。
     """
     client = MosaicAI(model=model)
-    schema = {
-        "title": "str",
-        "main_points": "List[str]",
-        "value": "int"
-    }
-    response = client.generate_json("AIの倫理的課題について3つのポイントを挙げて説明してください", schema)
+
+    class AIResponse(BaseModel):
+        ethical_concerns: list[str] = Field(description="AIの倫理的な懸念")
+        potential_benefits: list[str] = Field(description="AIの潜在的な利点")
+        future_of_ai: str = Field(description="AIの未来")
+        ai_adoption_rate: float = Field(description="AIの普及率")
+        is_ai_safe: bool = Field(description="AIは安全か")
+
+    response = client.generate_json("AIの倫理的課題、潜在的な利点、そして未来について説明してください。", AIResponse)
     assert isinstance(response, dict)
-    assert "title" in response
-    assert "main_points" in response
-    assert "value" in response
-    assert isinstance(response["main_points"], list)
-    assert len(response["main_points"]) == 3
+    assert "ethical_concerns" in response
+    assert "potential_benefits" in response
+    assert "future_of_ai" in response
+    assert "ai_adoption_rate" in response
+    assert "is_ai_safe" in response
+    assert isinstance(response["ethical_concerns"], list)
+    assert isinstance(response["potential_benefits"], list)
+    assert isinstance(response["future_of_ai"], str)
+    assert isinstance(response["ai_adoption_rate"], float)
+    assert isinstance(response["is_ai_safe"], bool)
 
 
 @pytest.mark.parametrize("model", ["gpt-4o", "claude-3-5-sonnet-20240620"])
@@ -61,19 +70,27 @@ def test_image_json_generation(model):
     """
     client = MosaicAI(model=model)
     image_path = "./tests/test_image.jpg"
-    schema = {
-        "objects": "List[str]",
-        "main_colors": "List[str]",
-        "scene_description": "str"
-    }
-    response = client.generate_with_image_json("この画像の内容をJSONで説明してください", image_path, schema)
+
+    class ImageDescription(BaseModel):
+        objects: list[str] = Field(description="画像に含まれるオブジェクトのリスト")
+        main_colors: list[str] = Field(description="画像の主要な色のリスト")
+        scene_description: str = Field(description="画像のシーンの説明")
+        image_quality: float = Field(description="画像の品質")
+        is_image_clear: bool = Field(description="画像は鮮明か")
+
+    response = client.generate_with_image_json(
+        "この画像の内容をJSONで説明してください。", image_path, ImageDescription)
     assert isinstance(response, dict)
     assert "objects" in response
     assert "main_colors" in response
     assert "scene_description" in response
+    assert "image_quality" in response
+    assert "is_image_clear" in response
     assert isinstance(response["objects"], list)
     assert isinstance(response["main_colors"], list)
     assert isinstance(response["scene_description"], str)
+    assert isinstance(response["image_quality"], float)
+    assert isinstance(response["is_image_clear"], bool)
 
 
 def test_invalid_model():

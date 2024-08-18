@@ -5,6 +5,7 @@ import json
 import google.generativeai as genai
 from mosaicai.models.gemini import Gemini
 from mosaicai.utils.api_key_manager import APIKeyManager
+from pydantic import BaseModel
 
 
 # APIKeyManagerのモック
@@ -13,6 +14,15 @@ def mock_api_key_manager():
     manager = MagicMock(spec=APIKeyManager)
     manager.get_api_key.return_value = "fake_api_key"
     return manager
+
+
+# OutputSchemaの定義
+class OutputSchema(BaseModel):
+    key_str: str
+    key_int: int
+    key_float: float
+    key_bool: bool
+    key_list: list
 
 
 # Geminiクラスのインスタンス化のテスト
@@ -68,24 +78,22 @@ def test_generate_with_image(mock_image_open, mock_generative_model, mock_api_ke
     mock_generative_model.return_value.generate_content.assert_called_once_with(
         ["Test message with image", mock_image])
     assert result == "Generated response with image"
-
-
 # generate_jsonメソッドのテスト
 @patch('google.generativeai.GenerativeModel')
 def test_generate_json(mock_generative_model, mock_api_key_manager):
     # モックの設定
     mock_response = MagicMock()
-    mock_response.text = '{"key": "value"}'
+    mock_response.text = '{"key_str": "value", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}'
     mock_generative_model.return_value.generate_content.return_value = mock_response
 
     gemini = Gemini(mock_api_key_manager)
-    output_schema = {"key": "str"}
+    output_schema = OutputSchema
     result = gemini.generate_json("Test JSON message", output_schema)
 
     # メソッドが正しく呼び出されたか確認
     mock_generative_model.return_value.generate_content.assert_called_once()
     assert isinstance(result, dict)
-    assert result == {"key": "value"}
+    assert result == {"key_str": "value", "key_int": 123, "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
 
 
 # generate_with_image_jsonメソッドのテスト
@@ -94,13 +102,13 @@ def test_generate_json(mock_generative_model, mock_api_key_manager):
 def test_generate_with_image_json(mock_image_open, mock_generative_model, mock_api_key_manager):
     # モックの設定
     mock_response = MagicMock()
-    mock_response.text = '{"key": "value with image"}'
+    mock_response.text = '{"key_str": "value with image", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}'
     mock_generative_model.return_value.generate_content.return_value = mock_response
     mock_image = MagicMock(spec=Image.Image)
     mock_image_open.return_value = mock_image
 
     gemini = Gemini(mock_api_key_manager)
-    output_schema = {"key": "str"}
+    output_schema = OutputSchema
     result = gemini.generate_with_image_json(
         "Test JSON message with image", "fake_image_path", output_schema)
 
@@ -108,7 +116,7 @@ def test_generate_with_image_json(mock_image_open, mock_generative_model, mock_a
     mock_image_open.assert_called_once_with("fake_image_path")
     mock_generative_model.return_value.generate_content.assert_called_once()
     assert isinstance(result, dict)
-    assert result == {"key": "value with image"}
+    assert result == {"key_str": "value with image", "key_int": 123, "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
 
 
 # エラーケースのテスト

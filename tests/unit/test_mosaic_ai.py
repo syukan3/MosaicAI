@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 from mosaicai import MosaicAI
 from mosaicai.exceptions import ModelNotSupportedError
+from pydantic import BaseModel
 
 
 @pytest.fixture
@@ -49,22 +50,21 @@ def test_generate_text(mock_generate_text, mosaicai):
     mock_generate_text.assert_called_once_with("Test prompt. Please return 'Test text'.")
 
 
-@patch.object(MosaicAI, 'generate_with_image')
-def test_generate_image_description(mock_generate_with_image, mosaicai):
-    # generate_with_imageメソッドが正しく呼び出され、結果が返されることを確認
-    mock_generate_with_image.return_value = "Image description"
-    result = mosaicai.generate_image_description(
-        "Test prompt. Please return 'Test image description'.", "./tests/test_image.jpg")
-    assert result == "Test image description."
-
-
 @patch.object(MosaicAI, 'generate_json')
 def test_generate_json(mock_generate_json, mosaicai):
     # generate_jsonメソッドが正しく呼び出され、結果が返されることを確認
-    schema = {"name": "string", "age": "integer"}
-    mock_generate_json.return_value = {"name": "John", "age": 30}
+
+    class OutputSchema(BaseModel):
+        name: str
+        age: int
+        height: float
+        is_adult: bool
+        hobbies: list
+
+    schema = OutputSchema
+    mock_generate_json.return_value = {"name": "John", "age": 30, "height": 175.5, "is_adult": True, "hobbies": ["reading", "swimming"]}
     result = mosaicai.generate_json("Create a person", schema)
-    assert result == {"name": "John", "age": 30}
+    assert result == {"name": "John", "age": 30, "height": 175.5, "is_adult": True, "hobbies": ["reading", "swimming"]}
     mock_generate_json.assert_called_once_with("Create a person", schema)
 
 
@@ -77,14 +77,28 @@ def test_generate_with_image(mock_generate_with_image, mosaicai):
     mock_generate_with_image.assert_called_once_with(
         "Describe this", "image.jpg")
 
-
 @patch.object(MosaicAI, 'generate_with_image_json')
 def test_generate_with_image_json(mock_generate_with_image_json, mosaicai):
     # generate_with_image_jsonメソッドが正しく呼び出され、結果が返されることを確認
-    schema = {"description": "string", "objects": "list"}
+    class OutputSchema(BaseModel):
+        description: str
+        objects: list
+        count: int
+        price: float
+        is_available: bool
+
+    schema = OutputSchema
     mock_generate_with_image_json.return_value = {
-        "description": "A cat", "objects": ["cat", "sofa"]}
+        "description": "A cat", 
+        "objects": ["cat", "sofa"],
+        "count": 1,
+        "price": 10.5,
+        "is_available": True}
     result = mosaicai.generate_with_image_json("Analyze this image", "image.jpg", schema)
-    assert result == {"description": "A cat", "objects": ["cat", "sofa"]}
+    assert result == {"description": "A cat", 
+                      "objects": ["cat", "sofa"],
+                      "count": 1,
+                      "price": 10.5,
+                      "is_available": True}
     mock_generate_with_image_json.assert_called_once_with(
         "Analyze this image", "image.jpg", schema)

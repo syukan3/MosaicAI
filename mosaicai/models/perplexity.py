@@ -1,5 +1,6 @@
 from openai import OpenAI
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Type
+from pydantic import BaseModel
 from .base import AIModelBase
 from ..utils.api_key_manager import APIKeyManager
 
@@ -39,7 +40,7 @@ class Perplexity(AIModelBase):
         # Perplexityは現在画像入力をサポートしていないため、エラーを返す
         raise NotImplementedError("Perplexity does not support image input.")
 
-    def generate_json(self, message: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
+    def generate_json(self, message: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         指定されたメッセージに対してPerplexityのJSON応答を生成する
         :param message: ユーザーからの入力メッセージ

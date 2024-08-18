@@ -3,7 +3,8 @@ import mimetypes
 import json
 import os
 import logging
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Type
+from pydantic import BaseModel
 from anthropic import Anthropic
 from .base import AIModelBase
 from ..utils.api_key_manager import APIKeyManager
@@ -91,7 +92,7 @@ class Claude(AIModelBase):
             logging.error(f"画像を含むメッセージの生成中にエラーが発生しました: {str(e)}")
             raise
 
-    def generate_json(self, message: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
+    def generate_json(self, message: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         指定されたメッセージに対してClaudeのJSON応答を生成する
         :param message: ユーザーからの入力メッセージ
@@ -115,7 +116,7 @@ class Claude(AIModelBase):
             logging.error(f"JSON生成中にエラーが発生しました: {str(e)}")
             raise
 
-    def generate_with_image_json(self, message: str, image_path: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
+    def generate_with_image_json(self, message: str, image_path: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
         """
         画像を含むメッセージに対してClaudeのJSON応答を生成する
         :param message: ユーザーからの入力メッセージ
@@ -129,10 +130,6 @@ class Claude(AIModelBase):
             system_message = f"応答は以下のJSON形式で生成してください: \n{schema_description}"
             mime_type = self._get_mime_type(image_path)
             base64_image = self._encode_image(image_path)
-
-            logging.info(f"画像ファイルのパス: {image_path}")
-            logging.info(f"MIMEタイプ: {mime_type}")
-            logging.info(f"ファイルサイズ: {os.path.getsize(image_path)} bytes")
 
             response = self.client.messages.create(
                 model=self.model,
@@ -180,33 +177,3 @@ class Claude(AIModelBase):
         """画像ファイルをbase64エンコードする"""
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode()
-
-    def _generate_schema_description(self, schema: Dict[str, Union[str, Dict]]) -> str:
-        """スキーマの説明を生成する"""
-        return json.dumps(schema, indent=2)
-
-    def _parse_json_response(self, response: str) -> Dict[str, Any]:
-        """JSON形式の応答をパースする"""
-        try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            logging.error(f"JSONのパースに失敗しました: {response}")
-            raise ValueError("生成された応答が有効なJSON形式ではありません。")
-
-    def _convert_types(self, data: Dict[str, Any], schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
-        """データの型をスキーマに従って変換する"""
-        for key, value in data.items():
-            if key in schema:
-                expected_type = schema[key]
-                if expected_type == "int":
-                    data[key] = int(value)
-                elif expected_type == "float":
-                    data[key] = float(value)
-                elif expected_type == "bool":
-                    data[key] = bool(value)
-                elif expected_type == "List[str]":
-                    if not isinstance(value, list):
-                        data[key] = [str(value)]
-                    else:
-                        data[key] = [str(item) for item in value]
-        return data

@@ -4,6 +4,15 @@ from openai import OpenAI
 from typing import Dict, Any, Union
 from mosaicai.models.perplexity import Perplexity
 from mosaicai.utils.api_key_manager import APIKeyManager
+from pydantic import BaseModel
+
+
+class OutputSchema(BaseModel):
+    key_str: str
+    key_int: int
+    key_float: float
+    key_bool: bool
+    key_list: list
 
 
 # テストフィクスチャ
@@ -63,16 +72,16 @@ def test_generate_json(mock_openai, perplexity_instance):
     """generate_jsonメソッドのテスト"""
     # モックの設定
     mock_openai.return_value.chat.completions.create.return_value = Mock(
-        choices=[Mock(message=Mock(content='{"key": "value"}'))]
+        choices=[
+            Mock(message=Mock(
+                content='{"key_str": "test", "key_int": 42, "key_float": 3.14, "key_bool": true, "key_list": ["a", "b", "c"]}'))
+        ]
     )
     perplexity_instance.client = mock_openai.return_value
-
-    # テスト用のスキーマ
-    output_schema = {"key": "str"}
-
+    output_schema = OutputSchema
     # メソッドの呼び出しとアサーション
     result = perplexity_instance.generate_json("Test message", output_schema)
-    assert result == {"key": "value"}
+    assert result == {"key_str": "test", "key_int": 42, "key_float": 3.14, "key_bool": True, "key_list": ["a", "b", "c"]}
     mock_openai.return_value.chat.completions.create.assert_called_once()
     assert mock_openai.return_value.chat.completions.create.call_args[1]['response_format'] == {
         "type": "json_object"}
@@ -91,18 +100,20 @@ def test_generate_json_type_conversion(mock_openai, perplexity_instance):
     """generate_jsonメソッドの型変換テスト"""
     mock_openai.return_value.chat.completions.create.return_value = Mock(
         choices=[
-            Mock(message=Mock(content='{"int_key": "42", "float_key": "3.14", "bool_key": "true"}'))]
+            Mock(message=Mock(
+                content='{"key_str": "test", "key_int": 42, "key_float": 3.14, "key_bool": true, "key_list": ["a", "b", "c"]}'))
+        ]
     )
     perplexity_instance.client = mock_openai.return_value
 
-    output_schema = {
-        "int_key": "int",
-        "float_key": "float",
-        "bool_key": "bool"
-    }
+    output_schema = OutputSchema
 
     result = perplexity_instance.generate_json("Test message", output_schema)
-    assert result == {"int_key": 42, "float_key": 3.14, "bool_key": True}
-    assert isinstance(result["int_key"], int)
-    assert isinstance(result["float_key"], float)
-    assert isinstance(result["bool_key"], bool)
+    assert result == {"key_str": "test", "key_int": 42, "key_float": 3.14,
+                      "key_bool": True, "key_list": ["a", "b", "c"]}
+    assert isinstance(result["key_str"], str)
+    assert isinstance(result["key_int"], int)
+    assert isinstance(result["key_float"], float)
+    assert isinstance(result["key_bool"], bool)
+    assert isinstance(result["key_list"], list)
+
