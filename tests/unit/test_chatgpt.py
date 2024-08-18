@@ -3,6 +3,15 @@ from unittest.mock import Mock, patch, mock_open
 from mosaicai.models.chatgpt import ChatGPT
 from mosaicai.utils.api_key_manager import APIKeyManager
 from openai import OpenAI
+from pydantic import BaseModel
+
+
+class OutputSchema(BaseModel):
+    key_str: str
+    key_int: int
+    key_float: float
+    key_bool: bool
+    key_list: list
 
 
 @pytest.fixture
@@ -73,12 +82,13 @@ def test_generate_with_image(mock_b64encode, mock_file, chatgpt_instance):
 def test_generate_json(chatgpt_instance):
     """generate_jsonメソッドのテスト"""
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content='{"key": "value"}'))]
+    mock_response.choices = [Mock(message=Mock(
+        content='{"key_str": "value", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}'))]
     chatgpt_instance.client.chat.completions.create = Mock(return_value=mock_response)
 
-    output_schema = {"key": "str"}
-    result = chatgpt_instance.generate_json("Test JSON message", output_schema)
-    assert result == {"key": "value"}
+    result = chatgpt_instance.generate_json("Test JSON message", OutputSchema)
+    assert result == {"key_str": "value", "key_int": 123,
+                      "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
     chatgpt_instance.client.chat.completions.create.assert_called_once()
 
 
@@ -88,12 +98,13 @@ def test_generate_with_image_json(mock_b64encode, mock_file, chatgpt_instance):
     """generate_with_image_jsonメソッドのテスト"""
     mock_b64encode.return_value = b"encoded_image"
     mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content='{"key": "value with image"}'))]
+    mock_response.choices = [Mock(message=Mock(
+        content='{"key_str": "value with image", "key_int": 123, "key_float": 1.23, "key_bool": true, "key_list": ["a", "b", "c"]}'))]
     chatgpt_instance.client.chat.completions.create = Mock(return_value=mock_response)
 
-    output_schema = {"key": "str"}
     result = chatgpt_instance.generate_with_image_json(
-        "Test JSON message with image", "./tests/test_image.jpg", output_schema)
-    assert result == {"key": "value with image"}
+        "Test JSON message with image", "./tests/test_image.jpg", OutputSchema)
+    assert result == {"key_str": "value with image", "key_int": 123,
+                      "key_float": 1.23, "key_bool": True, "key_list": ["a", "b", "c"]}
     chatgpt_instance.client.chat.completions.create.assert_called_once()
     mock_file.assert_called_once_with("./tests/test_image.jpg", "rb")

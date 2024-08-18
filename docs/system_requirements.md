@@ -26,6 +26,8 @@ MosaicAIは、複数の最先端AI言語モデル（ChatGPT、Claude、Gemini、
 - テキスト生成：各AIモデルを使用してテキストを生成する
 - 画像認識：画像を入力として受け取り、説明を生成する（対応モデルのみ）
 - JSON生成：指定されたスキーマに従ってJSON形式の出力を生成する
+- 画像JSON生成：指定されたスキーマに従って画像からJSON形式の出力を生成する
+
 
 ### 3.3 API Key管理
 
@@ -109,17 +111,14 @@ class MosaicAI:
     def generate_text(self, prompt: str) -> str:
         # テキスト生成メソッド
 
-    def generate_image_description(self, image_path: str, prompt: str) -> str:
+    def generate_with_image(self, image_path: str, prompt: str) -> str:
         # 画像説明生成メソッド
 
-    def generate_json(self, prompt: str, schema: Dict[str, Any]) -> Dict[str, Any]:
-        # JSON生成メソッド
+    def generate_json(self, message: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
+        # 指定されたメッセージに対してJSON応答を生成する
 
-    def generate_with_image(self, prompt: str, image_path: str) -> str:
-        # 画像付きテキスト生成メソッド
-
-    def generate_with_image_json(self, prompt: str, image_path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
-        # 画像付きJSON生成メソッド
+    def generate_with_image_json(self, message: str, image_path: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
+        # 画像を含むメッセージに対してJSON応答を生成する
 
     def set_api_key(self, model: str, api_key: str):
         # APIキーを設定するメソッド
@@ -139,25 +138,24 @@ class AIModelBase(ABC):
         """メッセージを受け取り、AIモデルからの応答を生成する抽象メソッド。"""
         pass
 
-    @abstractmethod
-    def generate_json(self, message: str, output_schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
-        """メッセージを受け取り、指定されたスキーマに従ってJSON形式の応答を生成する抽象メソッド。"""
+    def generate_json(self, message: str, output_schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
+        """JSON形式の応答を生成する抽象メソッド"""
         pass
 
     def _parse_json_response(self, response: str) -> dict:
-        """文字列形式のJSON応答をパースする内部メソッド。"""
+        """JSON応答をパースする内部メソッド"""
         pass
 
-    def _generate_schema_description(self, schema: Dict[str, Union[str, Dict]]) -> str:
-        """出力スキーマの説明を生成する内部メソッド。"""
+    def _generate_schema_description(self, schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> str:
+        """スキーマの説明を生成する内部メソッド"""
         pass
 
-    def _convert_types(self, data: Dict[str, Any], schema: Dict[str, Union[str, Dict]]) -> Dict[str, Any]:
-        """データの型をスキーマに従って変換する内部メソッド。"""
+    def _convert_types(self, data: Dict[str, Any], schema: Union[Dict[str, Union[str, Dict]], Type[BaseModel]]) -> Dict[str, Any]:
+        """データの型をスキーマに従って変換する内部メソッド"""
         pass
 
-    def _convert_value(self, value: Any, type_str: str) -> Any:
-        """単一の値を指定された型に変換する内部メソッド。"""
+    def _convert_value(self, value: Any, type_info: Union[str, Dict[str, Any]]) -> Any:
+        """単一の値を指定された型に変換する内部メソッド"""
         pass
 ```
 
@@ -192,18 +190,38 @@ client = MosaicAI()
 client.set_api_key("chatgpt", "your-api-key-here")
 
 # テキスト生成
-response = await client.generate_text("chatgpt", "AIの未来について教えてください")
+response = client.generate_text("AIの未来について教えてください")
 
 # 画像説明生成
-image_description = await client.generate_image_description("claude", "path/to/image.jpg", "この画像を詳しく説明してください")
+image_description = client.generate_with_image("path/to/image.jpg", "この画像を詳しく説明してください")
 
 # JSON生成
-schema = {
-    "title": "str",
-    "points": "List[str]",
-    "summary": "str"
-}
-json_response = await client.generate_json("gemini", "AIの倫理的課題について3つのポイントを挙げてください", schema)
+from pydantic import BaseModel
+from typing import List
+class AIEthicsResponse(BaseModel):
+    title: str
+    points: List[str]
+    summary: str
+    integer_value: int
+    float_value: float
+    boolean_flag: bool
+    nested_object: Dict[str, Any]
+    array_of_numbers: List[float]
+
+json_response = client.generate_json("AIの倫理的課題について3つのポイントを挙げてください", AIEthicsResponse)
+
+# 画像付きJSON生成
+class AIProductFeatures(BaseModel):
+    product_name: str
+    features: List[str]
+    overall_impression: str
+    price: float
+    is_available: bool
+    release_date: str
+    specifications: Dict[str, Union[str, int, float, bool]]
+    ratings: List[int]
+
+image_json_response = client.generate_with_image_json("path/to/image.jpg", "この画像に基づいて、製品の特徴を3つ挙げてください", AIProductFeatures)
 ```
 
 ### 6.2 設定ファイル形式
