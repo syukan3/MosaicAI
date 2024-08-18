@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mosaicai"
-version = "0.1.3"
+version = "0.1.4"
 description = "A unified interface for multiple AI language models"
 readme = "README.md"
 authors = [{ name = "syukan3", email = "syun3ac@gmail.com" }]
